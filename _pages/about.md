@@ -4,11 +4,9 @@ title: About
 permalink: /about/
 ---
 
+![image alt <]({{site.baseurl}}/images/raj_dp.png)
+
 Hi, I'm Raj, a statistician. 
-
-
-![]({{site.baseurl}}/images/raj_dp.png)
-
 
 I help organisations use data to make well informed business decisions.
 
