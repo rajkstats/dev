@@ -1,1 +1,1 @@
-Sitemap: https://rajkstats.github.io/dev/sitemap.xml
+Sitemap: https://rajkstats.dev/dev/sitemap.xml
