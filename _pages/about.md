@@ -4,11 +4,7 @@ title: About
 permalink: /about/
 ---
 
-![image alt]({{site.baseurl}}/images/raj_dp.ico#left)
-
-Hi, I'm Raj, a statistician. 
-
-I help organisations use data to make well informed business decisions.
+Hi, I'm Raj, a statistician. I help organisations use data to make well informed business decisions.
 
 In June 2017, I joined the C1X team as a data analyst.
 
@@ -30,3 +26,5 @@ Previously I have:
 Outside of all this, I love cooking desi food and morning walks. 
 
 I've lived in Bengaluru(India) since 2017 and grew up and completed my education in New Delhi (India).
+
+I intend to use this space to write and share stuff on analytics engineering. 
