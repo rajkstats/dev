@@ -27,6 +27,6 @@ Previously I have:
 
 Outside of all this, I love cooking desi food and morning walks. 
 
-I've lived in `Bengaluru(India)` since 2017 and grew up and completed my education in `New Delhi(India)`.
+I've lived in `Bengaluru, India` since 2017 and grew up and completed my education in `New Delhi, India`
 
-> Note : I intend to use this space to write and share stuff on analytics engineering. 
+`Note : I intend to use this space to write and share stuff on analytics engineering.`
