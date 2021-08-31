@@ -4,9 +4,9 @@ title: About Me
 permalink: /about/
 ---
 
-Hi, I'm Raj, a data scientist. I help organisations use data to make well informed business decisions.
+Hi, I'm Raj, a statistician. I help organisations use data to make well informed business decisions.
 
-In June 2017, I joined the C1X team as a data scientist. Currently I'm working on building a category reporting system for a large ecommerce client. 
+In June 2017, I joined the C1X team as a data analyst.
 
 Previously I have:
 
@@ -18,6 +18,11 @@ Previously I have:
 
 4. Identifying top monetisation friendly users based on various buying intents. This helped us identify which publisher had a premium audience and made us focus more of our efforts on growing those accounts. 
 
-Outside all this, I love cooking, bit of poetry and morning walks. 
+5. Built a category reporting system for a large ecommerce client
 
-I've lived in Bengaluru(India) since 2017 but grew up in New Delhi (India).
+6. Worked on a GDPR use-case for our client for meeting their data removal requirements
+
+
+Outside of all this, I love cooking desi food and morning walks. 
+
+I've lived in Bengaluru(India) since 2017 and grew up and completed my education in New Delhi (India).
