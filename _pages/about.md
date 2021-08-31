@@ -4,7 +4,13 @@ title: About Me
 permalink: /about/
 ---
 
-Hi, I'm Raj, a statistician. I help organisations use data to make well informed business decisions.
+Hi, I'm Raj, a statistician. 
+
+
+![]({{site.baseurl}}/images/raj_dp.jpg)
+
+
+I help organisations use data to make well informed business decisions.
 
 In June 2017, I joined the C1X team as a data analyst.
 
