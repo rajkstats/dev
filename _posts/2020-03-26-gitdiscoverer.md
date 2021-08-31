@@ -2,6 +2,7 @@
 toc: true
 layout: post
 description: "Shiny App to discover trending repos, trending developers and popular projects in ML/DL on Github"
+categories: [R,Shiny]
 comments: true
 image: images/fastpages_posts/gitdiscoverer/git_discoverer.jpg 
 author: <a href='https://twitter.com/rajkstats'>Raj Kumar</a>
