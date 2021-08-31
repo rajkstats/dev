@@ -4,7 +4,7 @@ title: About
 permalink: /about/
 ---
 
-![image alt <>]({{site.baseurl}}/images/raj_dp.ico)
+![]({{site.baseurl}}/images/raj_dp_round.ico)
 
 Hi, I'm Raj, a statistician. 
 
