@@ -6,7 +6,7 @@ permalink: /about/
 
 Hi, I'm Raj, a statistician. I help organisations use data to make well informed business decisions.
 
-In June 2017, I joined the C1X team as a data analyst.
+In June 2017, I joined the [C1X team](https://c1exchange.com/india/) as a data analyst.
 
 Previously I have:
 
@@ -27,6 +27,6 @@ Previously I have:
 
 Outside of all this, I love cooking desi food and morning walks. 
 
-I've lived in `Bengaluru, India` since 2017 and grew up and completed my education in `New Delhi, India`
+I've lived in Bengaluru, India since 2017 and grew up and completed my education in New Delhi, India
 
-Note : I intend to use this space to write and share stuff on analytics engineering
+**Note**: I intend to use this space to write and share stuff on analytics engineering
