@@ -7,7 +7,7 @@ hide_binder_badge: true
 comments: true
 sticky_rank: 1
 author: "<a href='https://twitter.com/rajkstats'>Raj Kumar</a>"
-description: "A quick tutorial on how to Run Spark in Jupyter and Colab Notebooks"
+description: "A quick tutorial on how to run spark in Jupyter and Colab Notebooks"
 image: /images/copied_from_nb/spark-on-notebook/blog-head.png
 categories: [Jupyter, Spark, Notebooks]
 nb_path: _notebooks/2021-09-02-running-spark-notebooks.ipynb
