@@ -288,6 +288,25 @@ layout: notebook
 </div>
 </div>
 </div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SparkSession</span>
+<span class="c1"># Create a Spark Session</span>
+<span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s1">&#39;docker-pyspark&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p><img src="/images/copied_from_nb/spark-on-notebook/pyspark-session.png" alt="python sc"></p>
@@ -301,6 +320,24 @@ layout: notebook
 </div>
 </div>
 </div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">library</span><span class="p">(</span><span class="n">SparkR</span><span class="p">)</span>
+<span class="n">sparkR</span><span class="o">.</span><span class="n">session</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p><img src="/images/copied_from_nb/spark-on-notebook/sparkr-session.png" alt="R sc"></p>
@@ -314,6 +351,29 @@ layout: notebook
 </div>
 </div>
 </div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">org.apache.spark.sql.SparkSession</span>
+
+<span class="n">val</span> <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span>
+    <span class="o">.</span><span class="n">builder</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;Spark SQL basic example&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="s2">&quot;spark.some.config.option&quot;</span><span class="p">,</span><span class="s2">&quot;some-value&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p><img src="/images/copied_from_nb/spark-on-notebook/scala-session.png" alt="Spark scala"></p>
