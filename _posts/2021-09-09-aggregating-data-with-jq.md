@@ -1261,7 +1261,7 @@ jq: error (at &lt;stdin&gt;:2): object ({&#34;id&#34;:27996...) is not valid in 
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Next-Steps">Next Steps<a class="anchor-link" href="#Next-Steps"> </a></h2><ul>
 <li>Ingest the hourly aggregates in a database of your choice </li>
-<li>Write an airflow DAG or CRON job to monitor the ETL pipeline</li>
+<li>Write an <strong>Airflow DAG</strong> or <strong>CRON job</strong> to monitor the ETL pipeline</li>
 </ul>
 
 </div>
