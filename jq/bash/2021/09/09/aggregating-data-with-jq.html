@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="twitter:card" content="summary_large_image" /><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Aggregating GH Archive Data with jq | RAJ KUMAR</title>
+<meta name="generator" content="Jekyll v4.1.1" />
+<meta property="og:title" content="Aggregating GH Archive Data with jq" />
+<meta name="author" content="<a href='https://twitter.com/rajkstats'>Raj Kumar</a>" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Tutorial on how to aggregate json data with jq" />
+<meta property="og:description" content="Tutorial on how to aggregate json data with jq" />
+<link rel="canonical" href="https://rajkstats.dev/jq/bash/2021/09/09/aggregating-data-with-jq.html" />
+<meta property="og:url" content="https://rajkstats.dev/jq/bash/2021/09/09/aggregating-data-with-jq.html" />
+<meta property="og:site_name" content="RAJ KUMAR" />
+<meta property="og:image" content="https://rajkstats.dev/images/copied_from_nb/agg-data-with-jq/blog-head.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-09-09T00:00:00-05:00" />
+<script type="application/ld+json">
+{"image":"https://rajkstats.dev/images/copied_from_nb/agg-data-with-jq/blog-head.png","url":"https://rajkstats.dev/jq/bash/2021/09/09/aggregating-data-with-jq.html","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://rajkstats.dev/jq/bash/2021/09/09/aggregating-data-with-jq.html"},"author":{"@type":"Person","name":"<a href='https://twitter.com/rajkstats'>Raj Kumar</a>"},"headline":"Aggregating GH Archive Data with jq","dateModified":"2021-09-09T00:00:00-05:00","datePublished":"2021-09-09T00:00:00-05:00","description":"Tutorial on how to aggregate json data with jq","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://rajkstats.dev/feed.xml" title="RAJ KUMAR" /><!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HQM87KGPB1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HQM87KGPB1');
+</script>
+
+
+<link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Primer/15.2.0/primer.css" integrity="sha512-xTz2ys4coGAOz8vuV1NcQBkgVmKhsSEtjbqyMJbBHRplFuvKIUo6xhLHpAyPt9mfR6twHJgn9OgVLuqOvjeBhg==" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css" integrity="sha512-1PKOgIY59xJ8Co8+NE6FZ+LOAZKjy+KY8iq0G4B3CyeY6wYHN3yt9PW0XpSriVlkMXe40PTKnXrLnZ9+fkDaog==" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/katex.min.css" integrity="sha512-h7nl+xz8wgDlNM4NqKEM4F1NkIRS17M9+uJwIGwuo8vGqIl4BhuCKdxjWEINm+xyrUjNCnK5dCrhM0sj+wTIXw==" crossorigin="anonymous" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/katex.min.js" integrity="sha512-/CMIhXiDA3m2c9kzRyd97MTb3MC6OVnx4TElQ7fkkoRghwDf6gi41gaT1PwF270W6+J60uTmwgeRpNpJdRV6sg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/contrib/auto-render.min.js" integrity="sha512-Do7uJAaHZm5OLrIv/yN4w0iG1dbu01kzdMNnFfu/mAqgUk6Nniv2JYHcwH+cNwjqgLcqcuBBk+JRvprLVI8azg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha512-0doc9hKxR3PYwso42RD1p5ySZpzzuDiOwMrdCEh2WdJZCjcmFKc/wEnL+z8fBQrnHoiNWbo+3fiGkOYXBdQp4A==" crossorigin="anonymous"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement( document.body, {
+        delimiters: [
+            {left: "$$", right: "$$", display: true},
+            {left: "[%", right: "%]", display: true},
+            {left: "$", right: "$", display: false}
+        ]}
+        );
+    });
+    </script>
+
+
+<script>
+function wrap_img(fn) {
+    if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading") {
+        var elements = document.querySelectorAll(".post img");
+        Array.prototype.forEach.call(elements, function(el, i) {
+            if (el.getAttribute("title") && (el.className != "emoji")) {
+                const caption = document.createElement('figcaption');
+                var node = document.createTextNode(el.getAttribute("title"));
+                caption.appendChild(node);
+                const wrapper = document.createElement('figure');
+                wrapper.className = 'image';
+                el.parentNode.insertBefore(wrapper, el);
+                el.parentNode.removeChild(el);
+                wrapper.appendChild(el);
+                wrapper.appendChild(caption);
+            }
+        });
+    } else { document.addEventListener('DOMContentLoaded', fn); }
+}
+window.onload = wrap_img;
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+    // add link icon to anchor tags
+    var elem = document.querySelectorAll(".anchor-link")
+    elem.forEach(e => (e.innerHTML = '<i class="fas fa-link fa-xs"></i>'));
+    });
+</script>
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">RAJ KUMAR</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a><a class="page-link" href="/categories/">Tags</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Aggregating GH Archive Data with jq</h1><p class="page-description">Tutorial on how to aggregate json data with jq</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2021-09-09T00:00:00-05:00" itemprop="datePublished">
+        Sep 9, 2021
+      </time>• 
+          <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+            <span class="p-author h-card" itemprop="name"><a href='https://twitter.com/rajkstats'>Raj Kumar</a></span></span>
+       • <span class="read-time" title="Estimated read time">
+    
+    
+      10 min read
+    
+</span></p>
+
+    
+      <p class="category-tags"><i class="fas fa-tags category-tags-icon"></i></i> 
+      
+        <a class="category-tags-link" href="/categories/#jq">jq</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/categories/#bash">bash</a>
+        
+      
+      </p>
+    
+
+    
+      </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <!--
+#################################################
+### THIS FILE WAS AUTOGENERATED! DO NOT EDIT! ###
+#################################################
+# file to edit: _notebooks/2021-09-09-aggregating-data-with-jq.ipynb
+-->
+
+<div class="container" id="notebook-container">
+        
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><figure>
+  
+    <img class="docimage" src="/images/copied_from_nb/agg-data-with-jq/blog-head.png" alt="" style="max-width: 700px" />
+    
+    
+</figure>
+</p>
+<h2 id="Motivation">Motivation<a class="anchor-link" href="#Motivation"> </a></h2><p>Transforming the raw data into a shape that's ready for analytics</p>
+<h2 id="Goal">Goal<a class="anchor-link" href="#Goal"> </a></h2><p>In this tutorial, we will be working with <strong>GH Archive data</strong> which is in <code>JSON</code> format, so before we move forward, we will provide some background on the source and dataset in the next section taken. End goal of this tutorial is to be able to write a bash script which should be able to aggregate the github raw logs using the fields of interest.</p>
+<h2 id="What-is-jq?">What is jq?<a class="anchor-link" href="#What-is-jq?"> </a></h2><ul>
+<li><a href="https://stedolan.github.io/jq/">jq</a> is a lightweight and flexible command-line JSON processor.</li>
+</ul>
+<ul>
+<li><p>jq is like <code>sed</code> for JSON data - you can use it to slice and filter and map and transform structured data with the same ease that <code>sed</code>, <code>awk</code>, <code>grep</code> that lets you play with text.</p>
+</li>
+<li><p>jq can mangle the data format that you have into the one that you want with very little effort, and the program to do so is often shorter and simpler than you'd expect</p>
+</li>
+</ul>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>This command line processor becomes very handy for folks who works with json data.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Installation">Installation<a class="anchor-link" href="#Installation"> </a></h2><p>jq is written in C and has no runtime dependencies, so it should be possible to build it for nearly any platform. Prebuilt binaries are available for Linux, OS X and Windows.</p>
+<p><a href="https://stedolan.github.io/jq/download/">Download here</a></p>
+<p><strong>Credits</strong>:<a href="https://stedolan.github.io/jq/">Stephen Dolan</a></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>To confirm the installation, type the following in terminal:</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span>jq --version
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>jq-1.6
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><div class="flash flash-warn">
+    <svg class="octicon octicon-zap octicon octicon-zap" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M10.561 1.5a.016.016 0 00-.01.004L3.286 8.571A.25.25 0 003.462 9H6.75a.75.75 0 01.694 1.034l-1.713 4.188 6.982-6.793A.25.25 0 0012.538 7H9.25a.75.75 0 01-.683-1.06l2.008-4.418.003-.006a.02.02 0 00-.004-.009.02.02 0 00-.006-.006L10.56 1.5zM9.504.43a1.516 1.516 0 012.437 1.713L10.415 5.5h2.123c1.57 0 2.346 1.909 1.22 3.004l-7.34 7.142a1.25 1.25 0 01-.871.354h-.302a1.25 1.25 0 01-1.157-1.723L5.633 10.5H3.462c-1.57 0-2.346-1.909-1.22-3.004L9.503.429z"></path></svg>
+    <strong>Important: </strong>Before we move forward, I would like to highlight here that anywhere you see &#8217;!&#8217;,&#8217;%&#8217; in the code has been done only for notebooks, remove it if you&#8217;re not working with notebooks
+</div></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Download-Dataset">Download Dataset<a class="anchor-link" href="#Download-Dataset"> </a></h2><p><strong>Data Source</strong>: <a href="https://www.gharchive.org/">GH Archive</a></p>
+<ul>
+<li>GH Archive is an open source project to record the public GitHub timeline, archive it, and make it easily accessible for further analysis</li>
+<li>GitHub provides 20+ event types, which range from new commits and fork events, to opening new tickets, commenting, and adding members to a project. These events are aggregated into hourly archives</li>
+<li>Each archive contains JSON encoded events as reported by the GitHub API. You can download the raw data and apply own processing to it - e.g. write a custom aggregation script, import it into a database, and so on!</li>
+</ul>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We will download one hour data, simply go to your terminal and follow the following steps</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">cd</span> /Users/raj/Desktop/agg-data-with-jq/00_data/ 
+<span class="o">!</span> wget https://data.gharchive.org/2021-09-01-15.json.gz
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>/Users/raj/Desktop/agg-data-with-jq/00_data
+--2021-09-11 16:30:29--  https://data.gharchive.org/2021-09-01-15.json.gz
+Resolving data.gharchive.org (data.gharchive.org)... 172.67.168.206, 104.21.46.175
+Connecting to data.gharchive.org (data.gharchive.org)|172.67.168.206|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 106793608 (102M) [application/gzip]
+Saving to: ‘2021-09-01-15.json.gz.1’
+
+2021-09-01-15.json. 100%[===================&gt;] 101.85M  40.8MB/s    in 2.5s    
+
+2021-09-11 16:30:31 (40.8 MB/s) - ‘2021-09-01-15.json.gz.1’ saved [106793608/106793608]
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><div class="flash flash-success">
+    <svg class="octicon octicon-checklist octicon octicon-checklist octicon octicon-checklist" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M2.5 1.75a.25.25 0 01.25-.25h8.5a.25.25 0 01.25.25v7.736a.75.75 0 101.5 0V1.75A1.75 1.75 0 0011.25 0h-8.5A1.75 1.75 0 001 1.75v11.5c0 .966.784 1.75 1.75 1.75h3.17a.75.75 0 000-1.5H2.75a.25.25 0 01-.25-.25V1.75zM4.75 4a.75.75 0 000 1.5h4.5a.75.75 0 000-1.5h-4.5zM4 7.75A.75.75 0 014.75 7h2a.75.75 0 010 1.5h-2A.75.75 0 014 7.75zm11.774 3.537a.75.75 0 00-1.048-1.074L10.7 14.145 9.281 12.72a.75.75 0 00-1.062 1.058l1.943 1.95a.75.75 0 001.055.008l4.557-4.45z"></path></svg>
+    <strong>Tip: </strong>You can edit the yyyy-mm-dd-hh format in <code>wget</code> command, depending upon which timeline you&#8217;re interested in exploring
+</div></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><div class="flash">
+    <svg class="octicon octicon-info" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm6.5-.25A.75.75 0 017.25 7h1a.75.75 0 01.75.75v2.75h.25a.75.75 0 010 1.5h-2a.75.75 0 010-1.5h.25v-2h-.25a.75.75 0 01-.75-.75zM8 6a1 1 0 100-2 1 1 0 000 2z"></path></svg>
+    <strong>Note: </strong>This is gzip json compressed file
+</div></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Built-in-Operators-and-Functions">Built in Operators and Functions<a class="anchor-link" href="#Built-in-Operators-and-Functions"> </a></h2><ol>
+<li><strong>Dot(<code>.</code>)</strong></li>
+<li><strong>pipe <code>|</code></strong></li>
+<li><strong>array operator <code>[]</code></strong></li>
+<li><strong>Output a CSV: <code>@csv</code></strong></li>
+<li><strong>Array and Object Construction: <code>[]</code> and <code>{}</code></strong></li>
+<li><strong>Filter <code>select()</code></strong></li>
+<li><strong>Apply a filter or function to an array <code>map()</code></strong> </li>
+<li><strong>Unique</strong></li>
+<li><strong>length</strong></li>
+<li><strong>group_by</strong></li>
+</ol>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><div class="flash">
+    <svg class="octicon octicon-info octicon octicon-info" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm6.5-.25A.75.75 0 017.25 7h1a.75.75 0 01.75.75v2.75h.25a.75.75 0 010 1.5h-2a.75.75 0 010-1.5h.25v-2h-.25a.75.75 0 01-.75-.75zM8 6a1 1 0 100-2 1 1 0 000 2z"></path></svg>
+    <strong>Note: </strong>There is lot more in the <a href="https://stedolan.github.io/jq/manual/#Builtinoperatorsandfunctions">jq manual</a> for you to look at.
+</div></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now again, switch back to your terminal to explore the raw data with jq</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Reading a gzipped JSON file (printing only one record) and invoking jq on top of it</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>1. Dot(<code>.</code>)</strong></p>
+<p>jq . leaves the output unmodified. This is the basic operator and also useful when you're looking to prettify your json to be able to bring it in the readable format</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">1</span> <span class="p">|</span> jq .
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;17808292672&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;PushEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;actor&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">{
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span>10745044<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;login&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;moises-santillan&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;display_login&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;moises-santillan&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;gravatar_id&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://api.github.com/users/moises-santillan&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;avatar_url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://avatars.githubusercontent.com/u/10745044?&#34;</span><span class="ansi-bold">
+  </span><span class="ansi-bold">}</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;repo&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">{
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span>271635192<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;name&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;moises-santillan/covid-19-mexico&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://api.github.com/repos/moises-santillan/covid-19-mexico&#34;</span><span class="ansi-bold">
+  </span><span class="ansi-bold">}</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;payload&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">{
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;push_id&#34;</span><span class="ansi-bold">: </span>7844628061<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;size&#34;</span><span class="ansi-bold">: </span>1<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;distinct_size&#34;</span><span class="ansi-bold">: </span>1<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;ref&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;refs/heads/master&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;head&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;e0dbca5c7f20d224377e6b25cbe1b7d165ce75f4&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;before&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;cf3de81ab4584c0dcdbbee3e42bbeafc2d4b0c94&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;commits&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">[
+      </span><span class="ansi-bold">{
+        </span><span class="ansi-blue-intense-fg ansi-bold">&#34;sha&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;e0dbca5c7f20d224377e6b25cbe1b7d165ce75f4&#34;</span><span class="ansi-bold">,
+        </span><span class="ansi-blue-intense-fg ansi-bold">&#34;author&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">{
+          </span><span class="ansi-blue-intense-fg ansi-bold">&#34;name&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;Moisés Santillán&#34;</span><span class="ansi-bold">,
+          </span><span class="ansi-blue-intense-fg ansi-bold">&#34;email&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;1b8f84bbb29551654b9a5d0b48cb0e5ec103b514@cinvestav.mx&#34;</span><span class="ansi-bold">
+        </span><span class="ansi-bold">}</span><span class="ansi-bold">,
+        </span><span class="ansi-blue-intense-fg ansi-bold">&#34;message&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;$&#34;</span><span class="ansi-bold">,
+        </span><span class="ansi-blue-intense-fg ansi-bold">&#34;distinct&#34;</span><span class="ansi-bold">: </span>true<span class="ansi-bold">,
+        </span><span class="ansi-blue-intense-fg ansi-bold">&#34;url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://api.github.com/repos/moises-santillan/covid-19-mexico/commits/e0dbca5c7f20d224377e6b25cbe1b7d165ce75f4&#34;</span><span class="ansi-bold">
+      </span><span class="ansi-bold">}</span><span class="ansi-bold">
+    </span><span class="ansi-bold">]</span><span class="ansi-bold">
+  </span><span class="ansi-bold">}</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;public&#34;</span><span class="ansi-bold">: </span>true<span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;created_at&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;2021-09-01T15:00:00Z&#34;</span><span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>You can use dot(.) operator to access one of the keys in json</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">1</span><span class="p">|</span> jq .id
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-green-fg">&#34;17808292672&#34;</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Also, chaining the key with its nested key allows to access nested object</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">1</span><span class="p">|</span> jq .repo.name
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-green-fg">&#34;moises-santillan/covid-19-mexico&#34;</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>2. pipe operator <code>|</code></strong> : You can use pipe and several operators together in jq for any complex transformations in your data</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">5</span><span class="p">|</span> jq .type
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-green-fg">&#34;PushEvent&#34;</span>
+<span class="ansi-green-fg">&#34;PullRequestEvent&#34;</span>
+<span class="ansi-green-fg">&#34;DeleteEvent&#34;</span>
+<span class="ansi-green-fg">&#34;WatchEvent&#34;</span>
+<span class="ansi-green-fg">&#34;PushEvent&#34;</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>3. array operator <code>[]</code></strong> : This operator is particularly useful in cases when you want to represent a list of github events (JSON) in this case.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Following is the method you can use to create a list of github events in JSON</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">1</span> <span class="p">|</span> jq <span class="s1">&#39;[.]&#39;</span>  
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-bold">[
+  </span><span class="ansi-bold">{
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;17808292672&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;PushEvent&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;actor&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">{
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span>10745044<span class="ansi-bold">,
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;login&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;moises-santillan&#34;</span><span class="ansi-bold">,
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;display_login&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;moises-santillan&#34;</span><span class="ansi-bold">,
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;gravatar_id&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;&#34;</span><span class="ansi-bold">,
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://api.github.com/users/moises-santillan&#34;</span><span class="ansi-bold">,
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;avatar_url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://avatars.githubusercontent.com/u/10745044?&#34;</span><span class="ansi-bold">
+    </span><span class="ansi-bold">}</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;repo&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">{
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span>271635192<span class="ansi-bold">,
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;name&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;moises-santillan/covid-19-mexico&#34;</span><span class="ansi-bold">,
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://api.github.com/repos/moises-santillan/covid-19-mexico&#34;</span><span class="ansi-bold">
+    </span><span class="ansi-bold">}</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;payload&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">{
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;push_id&#34;</span><span class="ansi-bold">: </span>7844628061<span class="ansi-bold">,
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;size&#34;</span><span class="ansi-bold">: </span>1<span class="ansi-bold">,
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;distinct_size&#34;</span><span class="ansi-bold">: </span>1<span class="ansi-bold">,
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;ref&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;refs/heads/master&#34;</span><span class="ansi-bold">,
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;head&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;e0dbca5c7f20d224377e6b25cbe1b7d165ce75f4&#34;</span><span class="ansi-bold">,
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;before&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;cf3de81ab4584c0dcdbbee3e42bbeafc2d4b0c94&#34;</span><span class="ansi-bold">,
+      </span><span class="ansi-blue-intense-fg ansi-bold">&#34;commits&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">[
+        </span><span class="ansi-bold">{
+          </span><span class="ansi-blue-intense-fg ansi-bold">&#34;sha&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;e0dbca5c7f20d224377e6b25cbe1b7d165ce75f4&#34;</span><span class="ansi-bold">,
+          </span><span class="ansi-blue-intense-fg ansi-bold">&#34;author&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">{
+            </span><span class="ansi-blue-intense-fg ansi-bold">&#34;name&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;Moisés Santillán&#34;</span><span class="ansi-bold">,
+            </span><span class="ansi-blue-intense-fg ansi-bold">&#34;email&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;1b8f84bbb29551654b9a5d0b48cb0e5ec103b514@cinvestav.mx&#34;</span><span class="ansi-bold">
+          </span><span class="ansi-bold">}</span><span class="ansi-bold">,
+          </span><span class="ansi-blue-intense-fg ansi-bold">&#34;message&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;$&#34;</span><span class="ansi-bold">,
+          </span><span class="ansi-blue-intense-fg ansi-bold">&#34;distinct&#34;</span><span class="ansi-bold">: </span>true<span class="ansi-bold">,
+          </span><span class="ansi-blue-intense-fg ansi-bold">&#34;url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://api.github.com/repos/moises-santillan/covid-19-mexico/commits/e0dbca5c7f20d224377e6b25cbe1b7d165ce75f4&#34;</span><span class="ansi-bold">
+        </span><span class="ansi-bold">}</span><span class="ansi-bold">
+      </span><span class="ansi-bold">]</span><span class="ansi-bold">
+    </span><span class="ansi-bold">}</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;public&#34;</span><span class="ansi-bold">: </span>true<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;created_at&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;2021-09-01T15:00:00Z&#34;</span><span class="ansi-bold">
+  </span><span class="ansi-bold">}</span><span class="ansi-bold">
+</span><span class="ansi-bold">]</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Or you can also create arrays by just selecting few keys</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">2</span> <span class="p">|</span>  jq <span class="s1">&#39;[.id, .type, .repo]&#39;</span> 
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-bold">[
+  </span><span class="ansi-green-fg">&#34;17808292672&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;PushEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-bold">{
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span>271635192<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;name&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;moises-santillan/covid-19-mexico&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://api.github.com/repos/moises-santillan/covid-19-mexico&#34;</span><span class="ansi-bold">
+  </span><span class="ansi-bold">}</span><span class="ansi-bold">
+</span><span class="ansi-bold">]</span>
+<span class="ansi-bold">[
+  </span><span class="ansi-green-fg">&#34;17808292724&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;PullRequestEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-bold">{
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span>279965573<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;name&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;konveyor/forklift-ui&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://api.github.com/repos/konveyor/forklift-ui&#34;</span><span class="ansi-bold">
+  </span><span class="ansi-bold">}</span><span class="ansi-bold">
+</span><span class="ansi-bold">]</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>In this case, above record have no keys, this becomes pretty handy when you want to map JSON to a csv file</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>4. Output a CSV: <code>@csv</code></strong></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Before you output to CSV, make sure all the fields have been flattened, otherwise it would throw an error, like the one we see below</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">2</span> <span class="p">|</span>  jq <span class="s1">&#39;[.id, .type, .repo]| @csv&#39;</span> 
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>jq: error (at &lt;stdin&gt;:1): object ({&#34;id&#34;:27163...) is not valid in a csv row
+jq: error (at &lt;stdin&gt;:2): object ({&#34;id&#34;:27996...) is not valid in a csv row
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">3</span> <span class="p">|</span> jq <span class="s1">&#39;[.id, .type, .repo.id,.repo.name,.repo.url]| @csv&#39;</span> 
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-green-fg">&#34;\&#34;17808292672\&#34;,\&#34;PushEvent\&#34;,271635192,\&#34;moises-santillan/covid-19-mexico\&#34;,\&#34;https://api.github.com/repos/moises-santillan/covid-19-mexico\&#34;&#34;</span>
+<span class="ansi-green-fg">&#34;\&#34;17808292724\&#34;,\&#34;PullRequestEvent\&#34;,279965573,\&#34;konveyor/forklift-ui\&#34;,\&#34;https://api.github.com/repos/konveyor/forklift-ui\&#34;&#34;</span>
+<span class="ansi-green-fg">&#34;\&#34;17808292729\&#34;,\&#34;DeleteEvent\&#34;,150458335,\&#34;openvinotoolkit/model_server\&#34;,\&#34;https://api.github.com/repos/openvinotoolkit/model_server\&#34;&#34;</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>If you would like to truncate the double quotes in csv file, use the following</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">3</span> <span class="p">|</span> jq <span class="s1">&#39;[.id, .type, .repo.id,.repo.name,.repo.url]| @csv&#39;</span> <span class="p">|</span> tr -d <span class="s1">&#39;&quot; &#39;</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>\17808292672\,\PushEvent\,271635192,\moises-santillan/covid-19-mexico\,\https://api.github.com/repos/moises-santillan/covid-19-mexico\
+\17808292724\,\PullRequestEvent\,279965573,\konveyor/forklift-ui\,\https://api.github.com/repos/konveyor/forklift-ui\
+\17808292729\,\DeleteEvent\,150458335,\openvinotoolkit/model_server\,\https://api.github.com/repos/openvinotoolkit/model_server\
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>5. Array and Object Construction</strong>: <code>[]</code> and <code>{}</code>**</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Let's say you want to use only few of the objects in json, there's a way to select few objects and create a new JSON. Following are the two methods:</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">2</span> <span class="p">|</span>  jq <span class="s1">&#39;[.id, .type, .repo]&#39;</span> 
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-bold">[
+  </span><span class="ansi-green-fg">&#34;17808292672&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;PushEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-bold">{
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span>271635192<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;name&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;moises-santillan/covid-19-mexico&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://api.github.com/repos/moises-santillan/covid-19-mexico&#34;</span><span class="ansi-bold">
+  </span><span class="ansi-bold">}</span><span class="ansi-bold">
+</span><span class="ansi-bold">]</span>
+<span class="ansi-bold">[
+  </span><span class="ansi-green-fg">&#34;17808292724&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;PullRequestEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-bold">{
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span>279965573<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;name&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;konveyor/forklift-ui&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://api.github.com/repos/konveyor/forklift-ui&#34;</span><span class="ansi-bold">
+  </span><span class="ansi-bold">}</span><span class="ansi-bold">
+</span><span class="ansi-bold">]</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">2</span> <span class="p">|</span>  jq <span class="s1">&#39;{id:.id, type: .type, repo: .repo}&#39;</span> 
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;17808292672&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;PushEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;repo&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">{
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span>271635192<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;name&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;moises-santillan/covid-19-mexico&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://api.github.com/repos/moises-santillan/covid-19-mexico&#34;</span><span class="ansi-bold">
+  </span><span class="ansi-bold">}</span><span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;17808292724&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;PullRequestEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;repo&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">{
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span>279965573<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;name&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;konveyor/forklift-ui&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://api.github.com/repos/konveyor/forklift-ui&#34;</span><span class="ansi-bold">
+  </span><span class="ansi-bold">}</span><span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>6. <code>select()</code></strong>: select can be used for querying the JSON</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">1</span> <span class="p">|</span> jq  <span class="s1">&#39;select(.type==&quot;PushEvent&quot; and .actor.login==&quot;moises-santillan&quot;)&#39;</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;17808292672&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;PushEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;actor&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">{
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span>10745044<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;login&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;moises-santillan&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;display_login&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;moises-santillan&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;gravatar_id&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://api.github.com/users/moises-santillan&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;avatar_url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://avatars.githubusercontent.com/u/10745044?&#34;</span><span class="ansi-bold">
+  </span><span class="ansi-bold">}</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;repo&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">{
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;id&#34;</span><span class="ansi-bold">: </span>271635192<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;name&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;moises-santillan/covid-19-mexico&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://api.github.com/repos/moises-santillan/covid-19-mexico&#34;</span><span class="ansi-bold">
+  </span><span class="ansi-bold">}</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;payload&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">{
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;push_id&#34;</span><span class="ansi-bold">: </span>7844628061<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;size&#34;</span><span class="ansi-bold">: </span>1<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;distinct_size&#34;</span><span class="ansi-bold">: </span>1<span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;ref&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;refs/heads/master&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;head&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;e0dbca5c7f20d224377e6b25cbe1b7d165ce75f4&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;before&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;cf3de81ab4584c0dcdbbee3e42bbeafc2d4b0c94&#34;</span><span class="ansi-bold">,
+    </span><span class="ansi-blue-intense-fg ansi-bold">&#34;commits&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">[
+      </span><span class="ansi-bold">{
+        </span><span class="ansi-blue-intense-fg ansi-bold">&#34;sha&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;e0dbca5c7f20d224377e6b25cbe1b7d165ce75f4&#34;</span><span class="ansi-bold">,
+        </span><span class="ansi-blue-intense-fg ansi-bold">&#34;author&#34;</span><span class="ansi-bold">: </span><span class="ansi-bold">{
+          </span><span class="ansi-blue-intense-fg ansi-bold">&#34;name&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;Moisés Santillán&#34;</span><span class="ansi-bold">,
+          </span><span class="ansi-blue-intense-fg ansi-bold">&#34;email&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;1b8f84bbb29551654b9a5d0b48cb0e5ec103b514@cinvestav.mx&#34;</span><span class="ansi-bold">
+        </span><span class="ansi-bold">}</span><span class="ansi-bold">,
+        </span><span class="ansi-blue-intense-fg ansi-bold">&#34;message&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;$&#34;</span><span class="ansi-bold">,
+        </span><span class="ansi-blue-intense-fg ansi-bold">&#34;distinct&#34;</span><span class="ansi-bold">: </span>true<span class="ansi-bold">,
+        </span><span class="ansi-blue-intense-fg ansi-bold">&#34;url&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;https://api.github.com/repos/moises-santillan/covid-19-mexico/commits/e0dbca5c7f20d224377e6b25cbe1b7d165ce75f4&#34;</span><span class="ansi-bold">
+      </span><span class="ansi-bold">}</span><span class="ansi-bold">
+    </span><span class="ansi-bold">]</span><span class="ansi-bold">
+  </span><span class="ansi-bold">}</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;public&#34;</span><span class="ansi-bold">: </span>true<span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;created_at&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;2021-09-01T15:00:00Z&#34;</span><span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>7. Apply a filter or function to an array <code>map()</code></strong> : To collapse lists to a single top level element</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">5</span><span class="p">|</span> jq -s <span class="s1">&#39;map(.type)&#39;</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-bold">[
+  </span><span class="ansi-green-fg">&#34;PushEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;PullRequestEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;DeleteEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;WatchEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;PushEvent&#34;</span><span class="ansi-bold">
+</span><span class="ansi-bold">]</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>8. <code>unique</code></strong></p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span>  jq -s <span class="s1">&#39;map(.type) | unique&#39;</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-bold">[
+  </span><span class="ansi-green-fg">&#34;CommitCommentEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;CreateEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;DeleteEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;ForkEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;GollumEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;IssueCommentEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;IssuesEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;MemberEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;PublicEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;PullRequestEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;PullRequestReviewCommentEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;PullRequestReviewEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;PushEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;ReleaseEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;WatchEvent&#34;</span><span class="ansi-bold">
+</span><span class="ansi-bold">]</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>9. <code>length</code></strong></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Here is what length means (taken from docs):</p>
+<ul>
+<li><p>The length of a string is the number of Unicode codepoints it contains (which will be the same as its JSON-encoded length in bytes if it's pure ASCII).</p>
+</li>
+<li><p>The length of an array is the number of elements.</p>
+</li>
+<li><p>The length of an object is the number of key-value pairs.</p>
+</li>
+<li><p>The length of null is zero.</p>
+</li>
+</ul>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>we have flattened the type list to top level elements and so it would return the number of elements, since it's an array</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">3</span> <span class="p">|</span> jq -s <span class="s1">&#39;map(.type)&#39;</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-bold">[
+  </span><span class="ansi-green-fg">&#34;PushEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;PullRequestEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-green-fg">&#34;DeleteEvent&#34;</span><span class="ansi-bold">
+</span><span class="ansi-bold">]</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span>gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">3</span> <span class="p">|</span> jq -s <span class="s1">&#39;map(.type)| length&#39;</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>3
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>10. <code>group_by</code></strong>: chunk the results into grouped lists</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> jq -s  <span class="s1">&#39;group_by (.type)[] | {type: .[0].type, count: length}&#39;</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;CommitCommentEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>790<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;CreateEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>24577<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;DeleteEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>7878<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;ForkEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>2803<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;GollumEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>411<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;IssueCommentEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>13276<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;IssuesEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>4377<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;MemberEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>469<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;PublicEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>587<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;PullRequestEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>18561<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;PullRequestReviewCommentEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>3720<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;PullRequestReviewEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>5957<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;PushEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>76918<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;ReleaseEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>1012<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;WatchEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>7398<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now that we know enough functions and operators, we can leverage that to write a  statement which would aggregate <strong>GH archive</strong> logs on fields on interest. Let's see how we can do that. We would also look at how to add and delete fields in the aggregated JSON</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Aggregating the GH Archive logs</strong></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Adding</strong> date_utc and date_hr two arguments in the JSON below and <strong>deleting</strong> actor_login</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> gzip -q -d -c <span class="m">2021</span>-09-01-15.json.gz <span class="p">|</span> head -n <span class="m">3</span><span class="p">|</span> jq -c --arg date_utc <span class="s2">&quot;</span><span class="k">$(</span>date +<span class="s1">&#39;%d-%m-%Y&#39;</span><span class="k">)</span><span class="s2">&quot;</span> --arg date_hr <span class="s2">&quot;</span><span class="k">$(</span>date<span class="k">)</span><span class="s2">&quot;</span> <span class="s1">&#39;. + {date_utc: $date_utc, date_hr : $date_hr}&#39;</span> <span class="p">|</span>jq -s <span class="s1">&#39;group_by (.date_utc, .date_hr,.actor.login,.repo.name,.type)[] | {&quot;date_utc&quot; : .[0].date_utc, &quot;date_hr&quot; : .[0].date_hr, &quot;actor_login&quot;:.[0].actor.login,&quot;repo_name&quot;:.[0].repo.name,&quot;type&quot;: .[0].type, count: length}| del(.actor_login)&#39;</span> 
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;date_utc&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;13-09-2021&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;date_hr&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;Mon Sep 13 17:20:46 IST 2021&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;actor_login&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;dtrawins&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;repo_name&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;openvinotoolkit/model_server&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;DeleteEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>1<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;date_utc&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;13-09-2021&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;date_hr&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;Mon Sep 13 17:20:46 IST 2021&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;actor_login&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;moises-santillan&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;repo_name&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;moises-santillan/covid-19-mexico&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;PushEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>1<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+<span class="ansi-bold">{
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;date_utc&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;13-09-2021&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;date_hr&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;Mon Sep 13 17:20:46 IST 2021&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;actor_login&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;seanforyou23&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;repo_name&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;konveyor/forklift-ui&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;type&#34;</span><span class="ansi-bold">: </span><span class="ansi-green-fg">&#34;PullRequestEvent&#34;</span><span class="ansi-bold">,
+  </span><span class="ansi-blue-intense-fg ansi-bold">&#34;count&#34;</span><span class="ansi-bold">: </span>1<span class="ansi-bold">
+</span><span class="ansi-bold">}</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Shell-Script">Shell-Script<a class="anchor-link" href="#Shell-Script"> </a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now, here is the example to the <a href="https://gist.github.com/rajkstats/41982bdd24bc68516bb53eab3a5e31e9">shell-script</a> which was our end goal which would aggregate data on hourly granularity. Output is being written in csv format and removing double quotes. All the hourly files need to be downloaded in path being provided which would pick the files with <code>.gz</code> extension only. There is a room for lot of improvement in shell-script. A lot more structure can be provided here. Rather, treat this as a reference to get you started with <code>jq</code>.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Snapshot of output of shell-script</strong></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><img src="/images/copied_from_nb/agg-data-with-jq/shell-script.png" alt="shell script" /></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Next-Steps">Next Steps<a class="anchor-link" href="#Next-Steps"> </a></h2><ul>
+<li>Ingest the hourly aggregates in a database of your choice </li>
+<li>Write an airflow DAG or CRON job to monitor the ETL pipeline</li>
+</ul>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Inspired-From-(Further-Resources)">Inspired From (Further Resources)<a class="anchor-link" href="#Inspired-From-(Further-Resources)"> </a></h2><ul>
+<li><a href="https://stedolan.github.io/jq/">jq Docs</a></li>
+<li><a href="https://www.gharchive.org/">Gh Archive</a></li>
+<li><a href="https://programminghistorian.org/en/lessons/json-and-jq#installation-on-os-x">JSON and jq</a></li>
+</ul>
+
+</div>
+</div>
+</div>
+</div>
+
+
+
+  </div><!-- from https://github.com/utterance/utterances -->
+<script src="https://utteranc.es/client.js"
+        repo="rajkstats/dev"
+        issue-term="title"
+        label="blogpost-comment"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script><a class="u-url" href="/jq/bash/2021/09/09/aggregating-data-with-jq.html" hidden></a>
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+      </div>
+      <div class="footer-col">
+        <p></p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/rajkstats" title="rajkstats"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://www.linkedin.com/in/rajkstats" title="rajkstats"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#linkedin"></use></svg></a></li><li><a rel="me" href="https://twitter.com/rajkstats" title="rajkstats"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
